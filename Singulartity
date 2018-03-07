@@ -19,7 +19,7 @@ Build 1.0
     sudo update-locale
 
     sudo apt-get --yes update
-    sudo apt-get --yes install unzip git-all gcc openjdk-7-jre-headless g++ make libz-dev wget tar liblzma-dev libbz2-dev liblist-moreutils-perl libmoo-perl libjson-perl libncurses5-dev python
+    sudo apt-get --yes install unzip pigz git-all gcc openjdk-7-jre-headless g++ make libz-dev wget tar liblzma-dev libbz2-dev liblist-moreutils-perl libmoo-perl libjson-perl libncurses5-dev python
 
 
     echo "Installing Shovill dependencies"
@@ -63,6 +63,7 @@ Build 1.0
     # build samtools
     make
     make install
+    # return to /opt/
     cd ..
 
     echo "BWA"
@@ -77,11 +78,11 @@ Build 1.0
     tar xf $LIGHTER
     make --silent -j -C Lighter-1.1.1
 
-    #echo "FLASH"
-    #FLASH=FLASH-1.2.11
-    #wget https://downloads.sourceforge.net/project/flashpage/$FLASH.tar.gz
-    #tar xf $FLASH.tar.gz
-    #make --silent -j -C $FLASH
+    echo "FLASH"
+    FLASH=FLASH-1.2.11
+    wget https://downloads.sourceforge.net/project/flashpage/$FLASH.tar.gz
+    tar xf $FLASH.tar.gz
+    make --silent -j -C $FLASH
 
     # add this to path :/opt/$FLASH
 
@@ -132,7 +133,9 @@ Build 1.0
     sudo echo 'LC_ALL="en_US.UTF-8"' >> $SINGULARITY_ENVIRONMENT
     sudo echo 'LC_CTYPE="UTF-8"' >> $SINGULARITY_ENVIRONMENT
     sudo echo 'LANG="en_US.UTF-8"' >>  $SINGULARITY_ENVIRONMENT
-    sudo echo "PATH=$PATH:/opt/${SPADES}/bin:/opt:/opt/seqtk-1.2:/opt/$SAMTOOLS:/opt/$BWA:/opt/Lighter-1.1.1:/opt/shovill/bin" >>  $SINGULARITY_ENVIRONMENT
+    sudo echo "PATH=$PATH:/opt/$SPADES/bin:/opt:/opt/seqtk-1.2:/opt/$SAMTOOLS:/opt/$BWA:/opt/Lighter-1.1.1:/opt/$FLASH:/opt/shovill/bin" >>  $SINGULARITY_ENVIRONMENT
+
+
 
     echo "Deleting source files"
     rm  *.tar.*
@@ -142,9 +145,14 @@ Build 1.0
 %runscript
   echo "Welcome to MDU SHOVILL ${SHOVILL_VERSION}" >&2
   exec spades.py "$@"
-  
-%test
-    echo "Testing SPADES"
-    spades.py --test
-    shovill --help
 
+%test
+    # need to add dirs to PATH to run tests
+    VERSION=3.11.1
+    SPADES=SPAdes-${VERSION}-Linux
+    SAMTOOLS=samtools-1.7
+    BWA=bwa-0.7.17
+    FLASH=FLASH-1.2.11
+    PATH=$PATH:/opt/$SPADES/bin:/opt:/opt/seqtk-1.2:/opt/$SAMTOOLS:/opt/$BWA:/opt/Lighter-1.1.1:/opt/$FLASH:/opt/shovill/bin
+    echo "Testing shovill dependencies"
+    shovill --check
